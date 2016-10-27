@@ -15,11 +15,13 @@
 # Copyright (C) 2016 Canonical, Ltd.
 
 usage () {
-cat <<EOF
-usage: $0 [DEVICE-PASSWORD]
-$1
-EOF
-exit 1
+    echo "Usage: $0 [OPTION...]"
+    echo
+    echo "Options:"
+    echo "  -h, --help              Show this mesage and exit"
+    echo "  -p, --password CODE     Use the CODE as device unlock code"
+    echo "  -e, --enable            Enable debugging"
+    echo "  -d, --disable           Disable debugging"
 }
 
 loudly () {
@@ -41,22 +43,77 @@ check_devices() {
     fi
 }
 
+# Disable debug logging for bluetoothd, pulseaudio and ofonod
+disable_debug_logs_on_device() {
+    loudly "echo -e '#\x21/bin/sh\necho $PASSWORD' >/tmp/askpass.sh"
+    loudly chmod +x /tmp/askpass.sh
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd -d/bluetoothd/g' $BTCONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start --log-level=debug/--start/g' $PACONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod -d/ofonod/g' $OFCONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot
+}
+
+# Enable debug logging for bluetoothd, pulseaudio and ofonod
+enable_debug_logs_on_device() {
+    loudly "echo -e '#\x21/bin/sh\necho $PASSWORD' >/tmp/askpass.sh"
+    loudly chmod +x /tmp/askpass.sh
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd/bluetoothd -d/g' $BTCONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start/--start --log-level=debug/g' $PACONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod/ofonod -d/g' $OFCONF
+    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot
+}
+
 [ -x /usr/bin/sudo               ] || { echo "Please install 'sudo'"; exit 1; }
 [ -x /usr/bin/add-apt-repository ] || { echo "Please install 'software-properties-common'"; exit 1; }
 
-PASSWORD="$1"
-[ $# -gt 0 ] && shift || usage "Missing DEVICE-PASSWORD"
+# Default action is to enable device
+ACTION="enable"
+
+while [ -n "$1" ]; do
+    case "$1" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --disable|-d)
+            ACTION="disable"
+            shift
+            ;;
+        --enable|-e)
+            ACTION="enable"
+            shift
+            ;;
+        --password|-p)
+            shift
+            PASSWORD="$1"
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ -z $PASSWORD ]; then
+    usage
+    exit 1
+fi
 
 # Bluetooth and PulseAudio conf files
-BTCONF2=/etc/init/bluetooth.conf
+BTCONF=/etc/init/bluetooth.conf
 PACONF=/usr/share/upstart/sessions/pulseaudio.conf
+OFCONF=/etc/init/ofono.override
 
 check_devices
 
-loudly "echo -e '#\x21/bin/sh\necho $PASSWORD' >/tmp/askpass.sh"
-loudly chmod +x /tmp/askpass.sh
-loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /
-loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/exec \/usr\/sbin\/bluetoothd/exec \/usr\/sbin\/bluetoothd -d/g' $BTCONF
-loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start/--start --log-level=debug/g' $PACONF
-loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot
+if [ "$ACTION" == "disable" ]; then
+    disable_debug_logs_on_device
+fi
+
+if [ "$ACTION" == "enable" ]; then
+    enable_debug_logs_on_device
+fi
+
 echo kthxbye
