@@ -46,23 +46,23 @@ check_devices() {
 # Disable debug logging for bluetoothd, pulseaudio and ofonod
 disable_debug_logs_on_device() {
     loudly "echo -e '#\x21/bin/sh\necho $PASSWORD' >/tmp/askpass.sh"
-    loudly chmod +x /tmp/askpass.sh
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd -d/bluetoothd/g' $BTCONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start --log-level=debug/--start/g' $PACONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod -d/ofonod/g' $OFCONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot
+    loudly "chmod +x /tmp/askpass.sh"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd -d/bluetoothd/g' $BTCONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start --log-level=debug/--start/g' $PACONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod -d/ofonod/g' $OFCONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot"
 }
 
 # Enable debug logging for bluetoothd, pulseaudio and ofonod
 enable_debug_logs_on_device() {
     loudly "echo -e '#\x21/bin/sh\necho $PASSWORD' >/tmp/askpass.sh"
-    loudly chmod +x /tmp/askpass.sh
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd/bluetoothd -d/g' $BTCONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start/--start --log-level=debug/g' $PACONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod/ofonod -d/g' $OFCONF
-    loudly SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot
+    loudly "chmod +x /tmp/askpass.sh"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A mount -o remount,rw /"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/bluetoothd/bluetoothd -d/g' $BTCONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/--start/--start --log-level=debug/g' $PACONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A sed -i 's/ofonod/ofonod -d/g' $OFCONF"
+    loudly "SUDO_ASKPASS=/tmp/askpass.sh sudo -A reboot"
 }
 
 [ -x /usr/bin/sudo               ] || { echo "Please install 'sudo'"; exit 1; }
